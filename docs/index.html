@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>图片随页面滚动切换特效</title>
+    <meta name="viewport" content="width=750"/>
+    <script src="//static.kaishiba.com/fixViewport.js" type="text/javascript"></script>
+    <style type="text/css">
+      *{
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        -webkit-overflow-scrolling: touch;
+      }
+      .block{
+        height: 1700px;
+      }
+      canvas{
+        /*background-color: rgba(0,0,255,0.1);*/
+      }
+    </style>
+  </head>
+  <body>
+    <div class="block"></div>
+    <canvas id="canvas-img-change"></canvas>
+    <div class="block"></div>
+  </body>
+  <script type="text/javascript">
+    (function(){
+      var defaultConf = {
+        circleCenter: { // 特效起始中心点
+          x: 250,
+          y: 250
+        },
+        isAuto: false, // 是否自动播放。
+        imgsArr: ['https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1522818156170&di=f15f3f0156afec76251a3edc3345f585&imgtype=0&src=http%3A%2F%2Fimgsrc.baidu.com%2Fimgad%2Fpic%2Fitem%2F8b82b9014a90f6037cb445933312b31bb151edda.jpg', 'https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1522818156170&di=ca1ed2d58cc6a44c84a8c5bd5346ee01&imgtype=0&src=http%3A%2F%2Fpic1.win4000.com%2Fwallpaper%2F1%2F580ed3a031ea7.jpg'],
+        id: 'canvas-img-change', // 画布canvas 的DOM id
+        start: 100, // 画布出现后的延迟开始动画转换的时间
+        width: 750, // 画布的宽
+        height: 600 // 画布的高
+      }
+      var canvasImg = {
+        init: function (options) {
+          if (typeof options !== 'object') {
+            options = {}
+          }
+          defaultConf = Object.assign(defaultConf, options)
+          canvasImgCore._init()
+        }
+      }
+      var canvasImgCore = {
+        _init: function () {
+          this.canvas = document.getElementById(defaultConf.id)
+          if (this.canvas === null || this.canvas.getContext === undefined) {
+            throw new Error('there is no canvas which id is ', defaultConf.id)
+            return false
+          }
+          this.canvas.setAttribute('width', defaultConf.width)
+          this.canvas.setAttribute('height', defaultConf.height)
+          this.cxt = this.canvas.getContext('2d')
+
+          this.img1 = document.createElement('img')
+          this.img1.src = defaultConf.imgsArr[0]
+          this.img1.crossOrigin = 'anonymous'
+          this.img2 = document.createElement('img')
+          this.img2.src = defaultConf.imgsArr[1]
+          this.img2.crossOrigin = 'anonymous'
+          if (defaultConf.isAuto === false) {
+            this._onScroll()
+          } else {
+            this._autoAnimation()
+          }
+        },
+        // 自动动画切换。
+        _autoAnimation: function () {},
+        // 监听document的滚动事件,进行动画切换
+        _onScroll: function () {
+          var windowHeight = document.documentElement.clientHeight // 视窗高度
+          var canvasOffsetHeight = this.canvas.offsetTop // 画布离顶部的距离
+          var canvasHeight = this.canvas.clientHeight // 画布的高度
+          var docScroolHeight = document.documentElement.scrollTop || document.body.scrollTop // 页面往上滚动了的高度。
+          // console.log(windowHeight,canvasOffsetHeight,canvasHeight, docScroolHeight)
+          var that = this
+          document.addEventListener('scroll', function (e) {
+            docScroolHeight = document.documentElement.scrollTop || document.body.scrollTop // 页面往上滚动了的高度。
+            if (docScroolHeight + windowHeight >= canvasOffsetHeight && docScroolHeight <= canvasOffsetHeight + canvasHeight) {
+              var m = docScroolHeight + windowHeight - canvasOffsetHeight
+              var n = canvasOffsetHeight + canvasHeight - docScroolHeight
+              // console.log('画布出现了', m, n)
+              that.render(m - canvasHeight - defaultConf.start)
+            }
+          })
+        },
+        // 重新找一个随机的起始圆心。初始配置是否配置过特效圆心。
+        _reRandomCenter: function () {},
+        render: function (r) {
+          var w = defaultConf.width
+          var h = defaultConf.height
+          var c = defaultConf.circleCenter
+          if (r > w * 2) { // 认为此时画面已全部切换完毕。不再重新绘制
+            this._reRandomCenter()
+            return true
+          } else if (r < 0) { // 只绘制一个像素
+            r = 1
+          }
+          console.log('render')
+          this.cxt.clearRect(0, 0, w, h)
+          this.cxt.beginPath();
+          this.cxt.drawImage(this.img1, 0, 0)
+          var pattern = this.cxt.createPattern(this.img2, "no-repeat");
+          this.cxt.arc(c.x, c.y, r, 0, 2 * Math.PI);
+          this.cxt.fillStyle = pattern;
+          this.cxt.closePath();
+          this.cxt.fill();
+        }
+      }
+
+      // AMD && CMD
+      if(typeof define === 'function'){
+        define(function(){
+          return canvasImg;
+        });
+      // CommonJS
+      }else if(typeof module !== "undefined" && module !== null){
+        module.exports = canvasImg;
+      // window
+      }else{
+        window.canvasImg = canvasImg;
+      }
+    })();
+    canvasImg.init()
+  </script>
+</html>
